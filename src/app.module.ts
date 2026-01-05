@@ -19,31 +19,20 @@ import { URLModule } from './modules/url/url.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const env = configService.get<string>('NODE_ENV') || 'development';
 
-        let dbUrl = '';
-        if (env === 'production') {
-          // Pakai MongoDB Atlas di production
-          dbUrl = configService.get<string>('PROD_DATABASE_URL') || '';
-          if (!dbUrl) {
-            throw new Error('PROD_DATABASE_URL must be set in environment variables!');
-          }
-        } else {
-          // Dev lokal pakai MongoDB Compass / localhost
-          dbUrl = configService.get<string>('DEV_DATABASE_URL') || 'mongodb://127.0.0.1:27017/securehub';
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const uri = config.get<string>('MONGO_URI');
+
+        if (!uri) {
+          throw new Error('MONGO_URI is not defined');
         }
 
-        return {
-          uri: dbUrl,
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        };
+        return { uri };
       },
     }),
+
     AuthModule,
     DashboardModule,
     AntiPhishingModule,
